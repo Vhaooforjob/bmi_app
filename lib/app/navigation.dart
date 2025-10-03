@@ -1,4 +1,7 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
 import '../features/bmi/presentation/bmi_home_page.dart';
 import '../features/blog/presentation/blog_page.dart';
 import '../features/chat/presentation/chat_page.dart';
@@ -17,11 +20,19 @@ class _AppNavigationState extends State<AppNavigation> {
 
   final pages = const [BmiHomePage(), BlogPage(), ChatPage(), ProfilePage()];
 
+  bool get _shouldUseGlass {
+    if (kIsWeb) return false;
+    try {
+      return !Platform.isAndroid;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: pages[index],
-      // Glass, translucent, rounded bottom bar
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -29,6 +40,7 @@ class _AppNavigationState extends State<AppNavigation> {
           child: GlassBottomNavBar(
             currentIndex: index,
             onTap: (i) => setState(() => index = i),
+            useGlass: _shouldUseGlass,
             items: const [
               NavItem(icon: Icons.monitor_weight_outlined, label: 'BMI'),
               NavItem(icon: Icons.article_outlined, label: 'Blog'),

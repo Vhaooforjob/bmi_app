@@ -1,3 +1,5 @@
+import 'package:bmi_app/features/bmi/data/bmi_api.dart';
+import 'package:bmi_app/features/profile/data/profile_api.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_controller.dart';
@@ -7,6 +9,8 @@ import 'core/auth/auth_guard.dart';
 import 'app/app.dart';
 import 'features/auth/data/auth_api.dart';
 import 'features/auth/application/auth_controller.dart';
+import 'features/bmi/application/bmi_controller.dart';
+import 'features/profile/application/profile_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,11 +24,18 @@ void main() async {
   final authController = AuthController(api: authApi, storage: storage);
   final guard = AuthGuard(storage);
 
+  final bmiApi = BmiApi(dio);
+  final bmiController = BmiController(bmiApi);
+
+  final profileApi = UserApi(dio);
+  final profileController = UserController(profileApi);
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: themeController),
         ChangeNotifierProvider.value(value: authController),
+        ChangeNotifierProvider.value(value: bmiController),
+        ChangeNotifierProvider.value(value: profileController),
       ],
       child: App(themeController: themeController, guard: guard),
     ),

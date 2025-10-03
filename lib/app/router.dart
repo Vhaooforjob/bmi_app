@@ -5,8 +5,10 @@ import '../core/auth/auth_guard.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_page.dart';
 import '../features/profile/presentation/profile_page.dart';
+import '../core/navigation/navigation_service.dart';
 
 GoRouter createRouter(AuthGuard guard) => GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (_, __) => const AppNavigation()),
