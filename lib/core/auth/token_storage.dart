@@ -6,6 +6,7 @@ class TokenStorage {
   static const _kRefresh = 'refresh_token';
   static const _kExpiresAt = 'expires_at_ms';
   static const _kUserId = 'user_id';
+  static const _kLastConvId = 'last_conversation_id';
 
   Future<void> saveTokens({
     required String accessToken,
@@ -46,11 +47,26 @@ class TokenStorage {
     return p.getString(_kUserId);
   }
 
+  Future<void> setLastConversationId(String? id) async {
+    final sp = await SharedPreferences.getInstance();
+    if (id == null || id.isEmpty) {
+      await sp.remove(_kLastConvId);
+    } else {
+      await sp.setString(_kLastConvId, id);
+    }
+  }
+
+  Future<String?> getLastConversationId() async {
+    final sp = await SharedPreferences.getInstance();
+    return sp.getString(_kLastConvId);
+  }
+
   Future<void> clear() async {
     final p = await SharedPreferences.getInstance();
     await p.remove(_kAccess);
     await p.remove(_kRefresh);
     await p.remove(_kExpiresAt);
     await p.remove(_kUserId);
+    await p.remove(_kLastConvId);
   }
 }
