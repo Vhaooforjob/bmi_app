@@ -221,64 +221,63 @@ class _ProfilePageState extends State<ProfilePage> {
                                       ),
                             ),
 
-                            const SizedBox(height: 16),
+                            // const SizedBox(height: 16),
 
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text('Giao diện', style: t.titleMedium),
-                            ),
-                            const SizedBox(height: 8),
-                            SegmentedButton<ThemeMode>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: ThemeMode.system,
-                                  icon: Icon(Icons.devices_other),
-                                  label: Text('Hệ thống'),
-                                ),
-                                ButtonSegment(
-                                  value: ThemeMode.light,
-                                  icon: Icon(Icons.light_mode_outlined),
-                                  label: Text('Sáng'),
-                                ),
-                                ButtonSegment(
-                                  value: ThemeMode.dark,
-                                  icon: Icon(Icons.dark_mode_outlined),
-                                  label: Text('Tối'),
-                                ),
-                              ],
-                              selected: {themeController.mode},
-                              style: ButtonStyle(
-                                backgroundColor:
-                                    WidgetStateProperty.resolveWith(
-                                      (states) =>
-                                          states.contains(WidgetState.selected)
-                                              ? cs.primary
-                                              : cs.surface,
-                                    ),
-                                foregroundColor:
-                                    WidgetStateProperty.resolveWith(
-                                      (states) =>
-                                          states.contains(WidgetState.selected)
-                                              ? Colors.white
-                                              : cs.onSurface,
-                                    ),
-                                side: WidgetStatePropertyAll(
-                                  BorderSide(color: cs.outlineVariant),
-                                ),
-                              ),
-                              onSelectionChanged: (set) {
-                                final m = set.first;
-                                themeController.setMode(m);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Đã chuyển giao diện: ${_modeLabel(m)}',
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-
+                            // Align(
+                            //   alignment: Alignment.centerLeft,
+                            //   child: Text('Giao diện', style: t.titleMedium),
+                            // ),
+                            // const SizedBox(height: 8),
+                            // SegmentedButton<ThemeMode>(
+                            //   segments: const [
+                            //     ButtonSegment(
+                            //       value: ThemeMode.system,
+                            //       icon: Icon(Icons.devices_other),
+                            //       label: Text('Hệ thống'),
+                            //     ),
+                            //     ButtonSegment(
+                            //       value: ThemeMode.light,
+                            //       icon: Icon(Icons.light_mode_outlined),
+                            //       label: Text('Sáng'),
+                            //     ),
+                            //     ButtonSegment(
+                            //       value: ThemeMode.dark,
+                            //       icon: Icon(Icons.dark_mode_outlined),
+                            //       label: Text('Tối'),
+                            //     ),
+                            //   ],
+                            //   selected: {themeController.mode},
+                            //   style: ButtonStyle(
+                            //     backgroundColor:
+                            //         WidgetStateProperty.resolveWith(
+                            //           (states) =>
+                            //               states.contains(WidgetState.selected)
+                            //                   ? cs.primary
+                            //                   : cs.surface,
+                            //         ),
+                            //     foregroundColor:
+                            //         WidgetStateProperty.resolveWith(
+                            //           (states) =>
+                            //               states.contains(WidgetState.selected)
+                            //                   ? Colors.white
+                            //                   : cs.onSurface,
+                            //         ),
+                            //     side: WidgetStatePropertyAll(
+                            //       BorderSide(color: cs.outlineVariant),
+                            //     ),
+                            //   ),
+                            //   onSelectionChanged: (set) {
+                            //     final m = set.first;
+                            //     themeController.setMode(m);
+                            //     ScaffoldMessenger.of(context).showSnackBar(
+                            //       SnackBar(
+                            //         content: Text(
+                            //           'Đã chuyển giao diện: ${_modeLabel(m)}',
+                            //         ),
+                            //       ),
+                            //     );
+                            //   },
+                            // ),
                             const SizedBox(height: 24),
                             LogoutButton(onLogout: _logout),
 
