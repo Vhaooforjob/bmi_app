@@ -36,6 +36,7 @@ lib/
 └─ profile/                 # Màn hình hồ sơ người dùng
 
 ---
+```
 
 ## 🚀 Cách chạy
 1.  **Clone repository:**
