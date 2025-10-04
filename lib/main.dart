@@ -11,6 +11,8 @@ import 'features/auth/data/auth_api.dart';
 import 'features/auth/application/auth_controller.dart';
 import 'features/bmi/application/bmi_controller.dart';
 import 'features/profile/application/profile_controller.dart';
+import 'features/blog/data/blog_api.dart';
+import 'features/blog/application/blog_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +31,9 @@ void main() async {
 
   final profileApi = UserApi(dio);
   final profileController = UserController(profileApi);
+
+  final blogApi = BlogApi(dio);
+  final blogController = BlogController(blogApi);
   runApp(
     MultiProvider(
       providers: [
@@ -36,6 +41,7 @@ void main() async {
         ChangeNotifierProvider.value(value: authController),
         ChangeNotifierProvider.value(value: bmiController),
         ChangeNotifierProvider.value(value: profileController),
+        ChangeNotifierProvider.value(value: blogController),
       ],
       child: App(themeController: themeController, guard: guard),
     ),
