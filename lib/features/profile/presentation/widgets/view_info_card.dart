@@ -39,13 +39,13 @@ class ViewInfoCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          ListTile(
-            leading: Icon(Icons.event_available_outlined, color: cs.primary),
-            title: const Text("Ngày tham gia"),
-            subtitle:
-                joinDate == null ? const Text('—') : Text(formatVn(joinDate!)),
-          ),
-          const Divider(height: 1),
+          // ListTile(
+          //   leading: Icon(Icons.event_available_outlined, color: cs.primary),
+          //   title: const Text("Ngày tham gia"),
+          //   subtitle:
+          //       joinDate == null ? const Text('—') : Text(formatVn(joinDate!)),
+          // ),
+          // const Divider(height: 1),
           ListTile(
             leading: Icon(Icons.cake_outlined, color: cs.primary),
             title: const Text("Ngày sinh"),
