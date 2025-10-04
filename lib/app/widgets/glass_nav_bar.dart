@@ -67,7 +67,7 @@ class GlassBottomNavBar extends StatelessWidget {
                   children: [
                     Icon(
                       items[i].icon,
-                      size: 20,
+                      size: 18,
                       color:
                           selected
                               ? Colors.white
@@ -86,6 +86,7 @@ class GlassBottomNavBar extends StatelessWidget {
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
+                                  fontSize: 12,
                                 ),
                               )
                               : const SizedBox.shrink(),

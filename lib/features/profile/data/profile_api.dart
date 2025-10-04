@@ -14,4 +14,23 @@ class UserApi {
     );
     return UserData.fromJson(res.data);
   }
+
+  Future<UserData> updateUser({
+    required String userId,
+    required String token,
+    required Map<String, dynamic> body,
+  }) async {
+    final res = await dio.put(
+      '/api/user/$userId',
+      data: body,
+      options: Options(
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': token,
+        },
+      ),
+    );
+    return UserData.fromJson(res.data);
+  }
 }

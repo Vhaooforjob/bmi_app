@@ -43,9 +43,9 @@ class _AppNavigationState extends State<AppNavigation> {
             useGlass: _shouldUseGlass,
             items: const [
               NavItem(icon: Icons.monitor_weight_outlined, label: 'BMI'),
-              NavItem(icon: Icons.article_outlined, label: 'Blog'),
+              NavItem(icon: Icons.article_outlined, label: 'Bài viết'),
               NavItem(icon: Icons.chat_bubble_outline, label: 'Chat'),
-              NavItem(icon: Icons.settings_outlined, label: 'Profile'),
+              NavItem(icon: Icons.settings_outlined, label: 'Cá nhân'),
             ],
           ),
         ),

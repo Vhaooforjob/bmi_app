@@ -4,8 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/token_storage.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../auth/application/auth_controller.dart';
 import '../application/profile_controller.dart';
-import '../../auth/application/auth_controller.dart'; // để dùng logout chung
+
+import 'widgets/header_card.dart';
+import 'widgets/view_info_card.dart';
+import 'widgets/edit_form_card.dart';
+import 'widgets/logout_button.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -15,10 +20,26 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  bool _isEditing = false;
+
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _usernameCtrl = TextEditingController();
+  DateTime? _birthdate;
+  String _sex = 'Male';
+
   @override
   void initState() {
     super.initState();
     _loadUser();
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _usernameCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUser() async {
@@ -26,23 +47,83 @@ class _ProfilePageState extends State<ProfilePage> {
     final userId = await storage.getUserId();
     final token = await storage.getToken();
     if (userId != null && token != null && mounted) {
-      // fetchUser nên return true/false để biết token hợp lệ
       final ok = await context.read<UserController>().fetchUser(userId, token);
       if (!ok && mounted) {
         await storage.clear();
         context.go('/login');
+        return;
       }
+      _fillFormFromCurrent();
+    }
+  }
+
+  void _fillFormFromCurrent() {
+    final u = context.read<UserController>().current;
+    if (u != null) {
+      _nameCtrl.text = u.fullName;
+      _emailCtrl.text = u.email;
+      _usernameCtrl.text = u.username;
+      _birthdate = u.birthdate;
+      _sex = u.sex ?? 'Male';
+      setState(() {});
+    }
+  }
+
+  Future<void> _save() async {
+    final storage = TokenStorage();
+    final userId = await storage.getUserId();
+    final token = await storage.getToken();
+    if (userId == null || token == null) return;
+
+    final ok = await context.read<UserController>().updateUser(
+      userId: userId,
+      token: token,
+      username: _usernameCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
+      fullName: _nameCtrl.text.trim(),
+      birthdate: _birthdate,
+      sex: _sex,
+    );
+
+    if (!mounted) return;
+
+    if (!ok) {
+      final err = context.read<UserController>().error;
+      if (err == "Token hết hạn hoặc không hợp lệ") {
+        await storage.clear();
+        context.go('/login');
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(err ?? "Cập nhật thất bại")));
+    } else {
+      setState(() => _isEditing = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Cập nhật thành công')));
     }
   }
 
   Future<void> _logout() async {
-    // Nếu bạn có API logout thì gọi tại đây; hiện tại clear local là đủ
     await context.read<AuthController>().logout();
     if (mounted) context.go('/login');
   }
 
+  Future<void> _pickBirthDate() async {
+    final now = DateTime.now();
+    final initial = _birthdate ?? DateTime(now.year - 18, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: now,
+      helpText: 'Chọn ngày sinh',
+    );
+    if (picked != null) setState(() => _birthdate = picked);
+  }
+
   String _formatVn(DateTime dt) {
-    // Quy đổi UTC -> VN (UTC+7)
     final vn = dt.toUtc().add(const Duration(hours: 7));
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(vn.day)}/${two(vn.month)}/${vn.year} ${two(vn.hour)}:${two(vn.minute)}';
@@ -59,274 +140,156 @@ class _ProfilePageState extends State<ProfilePage> {
     final ctrl = context.watch<UserController>();
     final themeController = context.watch<ThemeController>();
     final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    final user = ctrl.current;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Trang cá nhân")),
+      appBar: AppBar(
+        title: const Text("Trang cá nhân"),
+        actions: [
+          if (!_isEditing)
+            IconButton(
+              tooltip: _isEditing ? 'Hủy' : 'Sửa',
+              icon: Icon(_isEditing ? Icons.close : Icons.edit),
+              onPressed: () {
+                if (_isEditing) {
+                  _fillFormFromCurrent();
+                  setState(() => _isEditing = false);
+                } else {
+                  setState(() => _isEditing = true);
+                }
+              },
+            ),
+        ],
+      ),
+
       body:
           ctrl.loading
               ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    if (ctrl.current == null)
-                      _HeaderCard.placeholder()
-                    else
-                      _HeaderCard(
-                        name: ctrl.current!.fullName,
-                        email: ctrl.current!.email,
-                      ),
-
-                    const SizedBox(height: 16),
-                    if (ctrl.current != null)
-                      Card(
-                        color: cs.surface,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: cs.outlineVariant),
+              : SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            ListTile(
-                              leading: Icon(
-                                Icons.badge_outlined,
-                                color: cs.primary,
+                            if (user == null)
+                              const HeaderCard.placeholder()
+                            else
+                              HeaderCard(
+                                name: user.fullName,
+                                email: user.email,
                               ),
-                              title: const Text("Username"),
-                              subtitle: Text(ctrl.current!.username),
-                            ),
-                            const Divider(height: 1),
-                            ListTile(
-                              leading: Icon(
-                                Icons.verified_user_outlined,
-                                color: cs.primary,
-                              ),
-                              title: const Text("Xác minh"),
-                              subtitle: Text(
-                                ctrl.current!.verified ? "Đã xác minh" : "Chưa",
-                              ),
-                              trailing: Icon(
-                                ctrl.current!.verified
-                                    ? Icons.verified
-                                    : Icons.verified_outlined,
-                                color:
-                                    ctrl.current!.verified
-                                        ? cs.primary
-                                        : cs.outline,
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            ListTile(
-                              leading: Icon(
-                                Icons.event_available_outlined,
-                                color: cs.primary,
-                              ),
-                              title: const Text("Ngày tham gia"),
-                              subtitle: Text(_formatVn(ctrl.current!.joinDate)),
-                            ),
+
                             const SizedBox(height: 16),
-                          ],
-                        ),
-                      )
-                    else
-                      Center(child: Text(ctrl.error ?? "Không có dữ liệu")),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Giao diện',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SegmentedButton<ThemeMode>(
-                      segments: const [
-                        ButtonSegment(
-                          value: ThemeMode.system,
-                          icon: Icon(Icons.devices_other),
-                          label: Text('System'),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.light,
-                          icon: Icon(Icons.light_mode_outlined),
-                          label: Text('Light'),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.dark,
-                          icon: Icon(Icons.dark_mode_outlined),
-                          label: Text('Dark'),
-                        ),
-                      ],
-                      selected: {themeController.mode},
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.resolveWith((
-                          states,
-                        ) {
-                          final selected = states.contains(
-                            WidgetState.selected,
-                          );
-                          return selected ? cs.primary : cs.surface;
-                        }),
-                        foregroundColor: WidgetStateProperty.resolveWith((
-                          states,
-                        ) {
-                          final selected = states.contains(
-                            WidgetState.selected,
-                          );
-                          return selected ? Colors.white : cs.onSurface;
-                        }),
-                        overlayColor: WidgetStatePropertyAll(
-                          cs.primary.withOpacity(0.08),
-                        ),
-                        side: WidgetStatePropertyAll(
-                          BorderSide(color: cs.outlineVariant),
-                        ),
-                        padding: const WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        ),
-                      ),
-                      onSelectionChanged: (set) {
-                        final m = set.first;
-                        themeController.setMode(m);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Đã chuyển giao diện: ${_modeLabel(m)}',
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              switchInCurve: Curves.easeOut,
+                              switchOutCurve: Curves.easeIn,
+                              child:
+                                  _isEditing
+                                      ? EditFormCard(
+                                        key: const ValueKey('edit'),
+                                        nameCtrl: _nameCtrl,
+                                        usernameCtrl: _usernameCtrl,
+                                        emailCtrl: _emailCtrl,
+                                        birthdate: _birthdate,
+                                        sex: _sex,
+                                        onPickBirthdate: _pickBirthDate,
+                                        onSexChanged:
+                                            (v) => setState(() => _sex = v),
+                                        onSave: ctrl.saving ? null : _save,
+                                        onCancel: () {
+                                          _fillFormFromCurrent();
+                                          setState(() => _isEditing = false);
+                                        },
+                                        saving: ctrl.saving,
+                                      )
+                                      : ViewInfoCard(
+                                        key: const ValueKey('view'),
+                                        joinDate: user?.joinDate,
+                                        verified: user?.verified ?? false,
+                                        activeStatus: user?.activeStatus ?? '',
+                                        birthdate: user?.birthdate,
+                                        sex: user?.sex,
+                                        formatVn: _formatVn,
+                                      ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
 
-                    const SizedBox(height: 16),
-                    const Spacer(),
+                            const SizedBox(height: 16),
 
-                    _LogoutButton(onLogout: _logout),
-                  ],
-                ),
-              ),
-    );
-  }
-}
-
-class _HeaderCard extends StatelessWidget {
-  final String? name;
-  final String? email;
-  final bool isPlaceholder;
-
-  const _HeaderCard({this.name, this.email, this.isPlaceholder = false});
-
-  factory _HeaderCard.placeholder() => const _HeaderCard(isPlaceholder: true);
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      color: cs.surface,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: cs.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 34,
-              backgroundColor: cs.primary,
-              child: const Icon(Icons.person, size: 34, color: Colors.white),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child:
-                  isPlaceholder
-                      ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 16,
-                            width: 140,
-                            decoration: BoxDecoration(
-                              color: cs.outlineVariant.withOpacity(0.35),
-                              borderRadius: BorderRadius.circular(4),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text('Giao diện', style: t.titleMedium),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            height: 14,
-                            width: 180,
-                            decoration: BoxDecoration(
-                              color: cs.outlineVariant.withOpacity(0.25),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ],
-                      )
-                      : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name ?? '—',
-                            style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.email_outlined,
-                                size: 16,
-                                color: cs.onSurfaceVariant,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  email ?? '—',
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                            const SizedBox(height: 8),
+                            SegmentedButton<ThemeMode>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: ThemeMode.system,
+                                  icon: Icon(Icons.devices_other),
+                                  label: Text('Hệ thống'),
+                                ),
+                                ButtonSegment(
+                                  value: ThemeMode.light,
+                                  icon: Icon(Icons.light_mode_outlined),
+                                  label: Text('Sáng'),
+                                ),
+                                ButtonSegment(
+                                  value: ThemeMode.dark,
+                                  icon: Icon(Icons.dark_mode_outlined),
+                                  label: Text('Tối'),
+                                ),
+                              ],
+                              selected: {themeController.mode},
+                              style: ButtonStyle(
+                                backgroundColor:
+                                    WidgetStateProperty.resolveWith(
+                                      (states) =>
+                                          states.contains(WidgetState.selected)
+                                              ? cs.primary
+                                              : cs.surface,
+                                    ),
+                                foregroundColor:
+                                    WidgetStateProperty.resolveWith(
+                                      (states) =>
+                                          states.contains(WidgetState.selected)
+                                              ? Colors.white
+                                              : cs.onSurface,
+                                    ),
+                                side: WidgetStatePropertyAll(
+                                  BorderSide(color: cs.outlineVariant),
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
+                              onSelectionChanged: (set) {
+                                final m = set.first;
+                                themeController.setMode(m);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Đã chuyển giao diện: ${_modeLabel(m)}',
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 24),
+                            LogoutButton(onLogout: _logout),
+
+                            const SizedBox(height: 8),
+                          ],
+                        ),
                       ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LogoutButton extends StatelessWidget {
-  final VoidCallback onLogout;
-  const _LogoutButton({required this.onLogout});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: cs.error,
-          foregroundColor: cs.onError,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: onLogout,
-        icon: const Icon(Icons.logout),
-        label: const Text("Đăng xuất"),
-      ),
+                    );
+                  },
+                ),
+              ),
     );
   }
 }

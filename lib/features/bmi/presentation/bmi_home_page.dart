@@ -115,7 +115,7 @@ class _BmiHomePageState extends State<BmiHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BMI & Calories'),
+        title: const Text('Tính khẩu phần ăn cho bạn'),
         actions: [
           IconButton(
             tooltip: showAdvanced ? 'Ẩn nâng cao' : 'Hiện nâng cao',
